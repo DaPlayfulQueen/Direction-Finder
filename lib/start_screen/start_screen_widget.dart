@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:pelengator/common_utils/locator.dart';
 import 'package:pelengator/common_widgets/button.dart';
 
 class StartScreen extends StatelessWidget {
+
+  Locator locator;
+
+  StartScreen(this.locator);
+
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
