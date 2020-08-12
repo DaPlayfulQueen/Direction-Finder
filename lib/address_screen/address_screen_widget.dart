@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:pelengator/common_utils/locator.dart';
 import 'package:pelengator/common_widgets/button.dart';
 
 class AddressScreen extends StatefulWidget {
+
+  final Locator locator;
+
+  AddressScreen(this.locator);
+
   @override
   State createState() => AddressScreenState();
 }

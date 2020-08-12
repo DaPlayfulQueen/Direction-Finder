@@ -7,9 +7,9 @@ import 'package:validators/validators.dart';
 import '../common_utils/locator.dart';
 
 class CoordScreen extends StatefulWidget {
-  final Locator locator = Locator();
+  final Locator locator;
 
-  CoordScreen();
+  CoordScreen(this.locator);
 
   @override
   State createState() => CoordScreenState();
@@ -55,9 +55,7 @@ class CoordScreenState extends State<CoordScreen> {
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
-    return Scaffold(
-      body: Builder(
-        builder: (context) => Container(
+    return Container(
           width: double.infinity,
           margin: EdgeInsets.symmetric(
               vertical: height * 0.1, horizontal: width * 0.1),
@@ -117,9 +115,7 @@ class CoordScreenState extends State<CoordScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
+        );
   }
 
   getDistanceByCoordinates() async {
@@ -151,7 +147,7 @@ class CoordScreenState extends State<CoordScreen> {
 
   String getDistanceString() {
     if (distance == DISTANCE_INIT) return "";
-    if (distance == DISTANCE_ERROR) return "Ошибка ввода";
+    if (distance == DISTANCE_ERROR) return "Could not calculate :(";
     return distance.toString();
   }
 }

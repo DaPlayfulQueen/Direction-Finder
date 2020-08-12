@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:pelengator/common_utils/locator.dart';
+import 'package:pelengator/common_utils/consts.dart';
 import 'package:pelengator/common_widgets/button.dart';
 
 class StartScreen extends StatelessWidget {
+  final Function changeScreen;
 
-  Locator locator;
-
-  StartScreen(this.locator);
+  StartScreen(this.changeScreen);
 
   @override
   Widget build(BuildContext context) {
@@ -22,13 +21,12 @@ class StartScreen extends StatelessWidget {
             Container(
               margin: EdgeInsets.only(bottom: height * 0.03),
               child: StyledButton('Navigate to coordinates', () {
-                Navigator.pushNamed(context, '/coord_screen');
+                changeScreen(Screens.coordinates);
               }, height * 0.08, double.infinity),
             ),
             Container(
-              child: StyledButton(
-                  'Navigate to address', () {
-                Navigator.pushNamed(context, '/address_screen');
+              child: StyledButton('Navigate to address', () {
+                changeScreen(Screens.addresses);
               }, height * 0.08, double.infinity),
             ),
           ],
