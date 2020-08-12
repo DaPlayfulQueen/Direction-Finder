@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pelengator/common_utils/consts.dart';
 import 'package:pelengator/common_widgets/button.dart';
+import 'package:pelengator/commons/consts.dart';
 
 class StartScreen extends StatelessWidget {
   final Function changeScreen;

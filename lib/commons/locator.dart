@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
-import 'package:pelengator/common_utils/consts.dart';
+
+import 'consts.dart';
 
 class Locator {
   Position userPosition;
@@ -37,5 +38,7 @@ class Locator {
         targetLong);
   }
 
-  void setUserLocationListener() {}
+  void setUserLocationListener() {
+
+  }
 }
