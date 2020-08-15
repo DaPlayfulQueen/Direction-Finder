@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:pelengator/app_wrapper/app_wrapper_bloc.dart';
 import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/commons/locator.dart';
+import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
 
 class FinderScreen extends StatefulWidget {
   final bool byAddress;

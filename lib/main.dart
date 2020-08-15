@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:pelengator/app_wrapper/app_wrapper_bloc.dart';
 import 'package:pelengator/screens/address_screen_widget.dart';
 import 'package:pelengator/screens/coordscreen_widget.dart';
-import 'package:pelengator/screens/finder/finder_widget.dart';
+import 'package:pelengator/screens/finder_widget.dart';
+import 'commons/locator.dart';
 import 'package:pelengator/screens/start_screen_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
 
 void main() {
+
+
+  Locator locator = Locator();
+
   runApp(
-    BlocProvider(
-      create: (context) => NavigationBloc(NavigationState.start),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<NavigationBloc>(
+            create: (context) => NavigationBloc(NavigationState.start, locator)),
+      ],
       child: MyApp(),
     ),
   );
