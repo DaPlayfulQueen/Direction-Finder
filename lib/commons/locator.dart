@@ -8,17 +8,21 @@ class Locator {
   Position userPosition;
   Position targetPosition;
   double distance;
-  Geolocator geolocator = Geolocator();
+  Geolocator _geolocator = Geolocator();
   StreamSubscription<Position> _positionStreamSubscription;
 
   final LocationAccuracy desiredAccuracy = LocationAccuracy.best;
 
   Future<Position> getUserPositionOnce() async {
-    return geolocator.getCurrentPosition(desiredAccuracy: desiredAccuracy);
+    return _geolocator.getCurrentPosition(desiredAccuracy: desiredAccuracy);
   }
 
   void setTargetPosition(double lat, double long) {
     targetPosition = Position(latitude: lat, longitude: long);
+  }
+
+  void setInitialDistanceToPosition(double distance) {
+    this.distance = distance;
   }
 
   Future<double> calculateDistanceOnce(
@@ -31,7 +35,7 @@ class Locator {
       return DISTANCE_ERROR;
     }
 
-    return geolocator.distanceBetween(
+    return _geolocator.distanceBetween(
         userPosition.latitude,
         userPosition.longitude,
         targetLat,

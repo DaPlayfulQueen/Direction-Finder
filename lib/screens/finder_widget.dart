@@ -16,6 +16,15 @@ class FinderScreen extends StatefulWidget {
 }
 
 class FinderScreenState extends State<FinderScreen> {
+
+  Locator _locator;
+
+  @override
+  void initState() {
+    super.initState();
+    _locator = BlocProvider.of<NavigationBloc>(context).locator;
+  }
+
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;

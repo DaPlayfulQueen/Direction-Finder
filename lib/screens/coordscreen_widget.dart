@@ -15,17 +15,28 @@ class CoordScreen extends StatefulWidget {
 }
 
 class CoordScreenState extends State<CoordScreen> {
-  double distance = DISTANCE_INIT;
-  double targetLat = COORD_INIT;
-  double targetLong = COORD_INIT;
+  final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController latController = TextEditingController();
-  final TextEditingController longController = TextEditingController();
+  Locator _locator;
+
+  double tempDistance = DISTANCE_INIT;
+  double tempDestinationLat;
+  double tempDestinationLong;
+
+
 
   @override
   void initState() {
     super.initState();
-    setTextfieldControllers();
+    _locator = BlocProvider.of<NavigationBloc>(context).locator;
+  }
+
+  _onFieldsValidated() {
+    if (_formKey.currentState.validate()) {
+      setState(() {
+        getDistanceToPoint();
+      });
+    }
   }
 
   @override
@@ -38,25 +49,59 @@ class CoordScreenState extends State<CoordScreen> {
           EdgeInsets.symmetric(vertical: height * 0.1, horizontal: width * 0.1),
       child: Column(
         children: <Widget>[
+          Form(
+            key: _formKey,
+            child: Column(
+              children: <Widget>[
+                Container(
+                  margin: EdgeInsets.only(bottom: height * 0.05),
+                  child: TextFormField(
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return 'Fill this field';
+                      }
+                      var parsed = double.tryParse(value);
+                      if (parsed == null) {
+                        return "It's not a number";
+                      }
+                      tempDestinationLat = parsed;
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(), hintText: 'Latitude'),
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.only(bottom: height * 0.05),
+                  child: TextFormField(
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return 'Fill this field';
+                      }
+                      var parsed = double.tryParse(value);
+                      if (parsed == null) {
+                        return "It's not a number";
+                      }
+                      tempDestinationLong = parsed;
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                        border: OutlineInputBorder(), hintText: 'Longitude'),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Container(
-            margin: EdgeInsets.only(bottom: height * 0.05),
-            child: TextField(
-              controller: latController,
-              decoration: InputDecoration(
-                  border: OutlineInputBorder(), hintText: 'Latitude'),
+            margin: EdgeInsets.only(bottom: height * 0.025),
+            child: StyledButton(
+              'Find',
+              _onFieldsValidated,
             ),
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
-            child: TextField(
-              controller: longController,
-              decoration: InputDecoration(
-                  border: OutlineInputBorder(), hintText: 'Longitude'),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(bottom: height * 0.05),
-            child: StyledButton('Go!', goCallback),
+            child: StyledButton('Go!', goCallback, color: tempDistance < 0 ? Colors.grey : Color(BLUE_COLOR_HEX)),
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
@@ -64,75 +109,46 @@ class CoordScreenState extends State<CoordScreen> {
           ),
           Spacer(),
           Container(
-            child: TextIndicator('Distance: '),
+            child: TextIndicator('Distance: ${getDistanceString()}'),
           ),
         ],
       ),
     );
   }
 
-  void setTextfieldControllers() {
-    latController.addListener(() {
-      var value = double.tryParse(latController.text);
-      print("PARSED IS $value");
-      if (value != null) {
-        targetLat = value;
-        getDistanceToPoint();
-      } else {
-        targetLat = COORD_ERROR;
-        distance = DISTANCE_ERROR;
-      }
-      setState(() {});
-    });
-    longController.addListener(() {
-      var value = double.tryParse(longController.text);
-      if (value != null) {
-        targetLong = value;
-        getDistanceToPoint();
-      } else {
-        targetLong = COORD_ERROR;
-        distance = DISTANCE_ERROR;
-      }
-      setState(() {});
-    });
-  }
-
   getDistanceToPoint() async {
-    if (targetLat == COORD_ERROR || targetLong == COORD_ERROR) {
-      distance = DISTANCE_ERROR;
-      return;
-    }
+    Position userPosition = await _locator.getUserPositionOnce();
+    tempDistance = (await _locator.calculateDistanceOnce(
+        userPosition,
+        Position(
+            latitude: tempDestinationLat, longitude: tempDestinationLong))) / 1000;
 
-    if (targetLat == COORD_INIT || targetLong == COORD_INIT) {
-      distance = DISTANCE_INIT;
-      return;
-    }
-
-//    Position userPosition = await widget.locator.getUserPositionOnce();
-//    distance = (await widget.locator.calculateDistanceOnce(
-//        userPosition, Position(latitude: targetLat, longitude: targetLong)));
-
-    if (distance != DISTANCE_ERROR) {
-      distance /= 1000;
-    }
   }
 
   String getDistanceString() {
-    if (distance == DISTANCE_INIT) return "";
-    if (distance == DISTANCE_ERROR) return "Could not calculate :(";
-    return distance.toString();
+    if (tempDistance == DISTANCE_INIT) {
+      return "";
+    }
+
+    if (tempDistance == DISTANCE_ERROR) {
+      return "Calculation error! Looks like coordinates are incorrect";
+    }
+
+    return tempDistance.toString() + " kms";
   }
 
-  void goCallback() {
-    if (distance == DISTANCE_INIT || distance == DISTANCE_ERROR) {
+  goCallback() {
+    if (tempDistance == DISTANCE_INIT || tempDistance == DISTANCE_ERROR) {
       Scaffold.of(context).showSnackBar(
         SnackBar(
-          content: Text("Input correct coordinates first!"),
+          content: Text('First check if your input correct by pressing button "Find"!'),
         ),
       );
     } else {
-//      widget.locator.setTargetPosition(targetLat, targetLong);
-      BlocProvider.of<NavigationBloc>(context).add(NavigationEvent.toFinderScreenAdd);
+      _locator.setTargetPosition(tempDestinationLat, tempDestinationLong);
+      _locator.setInitialDistanceToPosition(tempDistance);
+      BlocProvider.of<NavigationBloc>(context)
+          .add(NavigationEvent.toFinderScreenAdd);
     }
   }
 
