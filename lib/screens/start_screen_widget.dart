@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pelengator/app_wrapper/app_wrapper_bloc.dart';
 import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/commons/consts.dart';
 
 class StartScreen extends StatelessWidget {
-  final Function changeScreen;
-
-  StartScreen(this.changeScreen);
+  StartScreen();
 
   @override
   Widget build(BuildContext context) {
@@ -20,14 +20,18 @@ class StartScreen extends StatelessWidget {
           children: <Widget>[
             Container(
               margin: EdgeInsets.only(bottom: height * 0.03),
-              child: StyledButton('Navigate to coordinates', () {
-                changeScreen(Screens.coordinates);
-              }),
+              child: StyledButton(
+                'Navigate to coordinates',
+                () {
+                  BlocProvider.of<NavigationBloc>(context).add(NavigationEvent.toCoordinatesScreen);
+                },
+                textColor: Colors.white,
+              ),
             ),
             Container(
               child: StyledButton('Navigate to address', () {
-                changeScreen(Screens.addresses);
-              }),
+                BlocProvider.of<NavigationBloc>(context).add(NavigationEvent.toAddressesScreen);
+              }, textColor: Colors.white),
             ),
           ],
         ),

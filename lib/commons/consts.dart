@@ -5,4 +5,3 @@ const COORD_ERROR = -200.0;
 
 const BLUE_COLOR_HEX = 0xFF3f4bb7;
 
-enum Screens { start, coordinates, addresses, finder }

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:pelengator/app_wrapper/app_wrapper_bloc.dart';
 import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/commons/locator.dart';
 
 class CoordScreen extends StatefulWidget {
-  final Locator locator;
-  final Function changeAppScreen;
-
-  CoordScreen(this.changeAppScreen, this.locator);
+  CoordScreen();
 
   @override
   State createState() => CoordScreenState();
@@ -109,9 +108,9 @@ class CoordScreenState extends State<CoordScreen> {
       return;
     }
 
-    Position userPosition = await widget.locator.getUserPositionOnce();
-    distance = (await widget.locator.calculateDistanceOnce(
-        userPosition, Position(latitude: targetLat, longitude: targetLong)));
+//    Position userPosition = await widget.locator.getUserPositionOnce();
+//    distance = (await widget.locator.calculateDistanceOnce(
+//        userPosition, Position(latitude: targetLat, longitude: targetLong)));
 
     if (distance != DISTANCE_ERROR) {
       distance /= 1000;
@@ -124,7 +123,6 @@ class CoordScreenState extends State<CoordScreen> {
     return distance.toString();
   }
 
-
   void goCallback() {
     if (distance == DISTANCE_INIT || distance == DISTANCE_ERROR) {
       Scaffold.of(context).showSnackBar(
@@ -133,12 +131,12 @@ class CoordScreenState extends State<CoordScreen> {
         ),
       );
     } else {
-      widget.locator.setTargetPosition(targetLat, targetLong);
-      widget.changeAppScreen(Screens.finder);
+//      widget.locator.setTargetPosition(targetLat, targetLong);
+      BlocProvider.of<NavigationBloc>(context).add(NavigationEvent.toFinderScreenAdd);
     }
   }
 
   backCallback() {
-    widget.changeAppScreen(Screens.start);
+    BlocProvider.of<NavigationBloc>(context).add(NavigationEvent.toStartScreen);
   }
 }

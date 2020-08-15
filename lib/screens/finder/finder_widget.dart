@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pelengator/app_wrapper/app_wrapper_bloc.dart';
 import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/commons/locator.dart';
 
 class FinderScreen extends StatefulWidget {
-  final Locator locator;
+  final bool byAddress;
 
-  FinderScreen(this.locator);
+  FinderScreen(this.byAddress);
 
   @override
   State createState() => FinderScreenState();
@@ -83,7 +85,12 @@ class FinderScreenState extends State<FinderScreen> {
                     margin: EdgeInsets.only(bottom: height * 0.02),
                     child: StyledButton(
                       'Back',
-                      () {},
+                      () {
+                        BlocProvider.of<NavigationBloc>(context).add(
+                            widget.byAddress
+                                ? NavigationEvent.toAddressesScreen
+                                : NavigationEvent.toCoordinatesScreen);
+                      },
                       color: Colors.transparent,
                       textColor: Color(BLUE_COLOR_HEX),
                     ),
@@ -92,7 +99,10 @@ class FinderScreenState extends State<FinderScreen> {
                     margin: EdgeInsets.only(bottom: height * 0.06),
                     child: StyledButton(
                       'Drop',
-                      () {},
+                      () {
+                        BlocProvider.of<NavigationBloc>(context)
+                            .add(NavigationEvent.toStartScreen);
+                      },
                       color: Colors.transparent,
                       textColor: Color(BLUE_COLOR_HEX),
                     ),
@@ -103,25 +113,6 @@ class FinderScreenState extends State<FinderScreen> {
           ),
         ],
       ),
-//      Column(
-//        crossAxisAlignment: CrossAxisAlignment.center,
-//        children: <Widget>[
-//          Row(
-//            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//            crossAxisAlignment: CrossAxisAlignment.stretch,
-//            children: <Widget>[
-//              Container(
-//                height: height * 0.08,
-//                decoration: BoxDecoration(
-//                    borderRadius: BorderRadius.circular(5.0),
-//                    border: Border.all(color: Colors.grey, width: 1.0)),
-//                child: Text('Left', style: TextStyle(color: Colors.black),),
-//              ),
-//              Text("Right")
-//            ],
-//          ),
-//        ],
-//      ),
     );
   }
 }

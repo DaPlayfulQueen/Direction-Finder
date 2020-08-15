@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pelengator/app_wrapper/app_wrapper_bloc.dart';
 import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/common_widgets/textindicator.dart';
-import 'package:pelengator/commons/locator.dart';
 
 class AddressScreen extends StatefulWidget {
-  final Locator locator;
-
-  AddressScreen(this.locator);
+  AddressScreen();
 
   @override
   State createState() => AddressScreenState();
@@ -44,11 +43,16 @@ class AddressScreenState extends State<AddressScreen> {
             ),
             Container(
               margin: EdgeInsets.only(top: height * 0.03),
-              child: StyledButton('Go!', () {}),
+              child: StyledButton('Go!', () {
+                BlocProvider.of<NavigationBloc>(context).add(NavigationEvent.toFinderScreenAdd);
+              }),
             ),
             Container(
               margin: EdgeInsets.only(top: height * 0.015),
-              child: StyledButton('Back :(', () {}),
+              child: StyledButton('Back :(', () {
+                BlocProvider.of<NavigationBloc>(context)
+                    .add(NavigationEvent.toStartScreen);
+              }),
             ),
             Spacer(),
             Container(
