@@ -12,12 +12,18 @@ class AddressScreen extends StatefulWidget {
 }
 
 class AddressScreenState extends State<AddressScreen> {
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
-    return Scaffold(
-      body: Container(
+    return Container(
         width: double.infinity,
         margin: EdgeInsets.symmetric(
             vertical: height * 0.1, horizontal: width * 0.1),
@@ -60,7 +66,7 @@ class AddressScreenState extends State<AddressScreen> {
             )
           ],
         ),
-      ),
+
     );
   }
 }

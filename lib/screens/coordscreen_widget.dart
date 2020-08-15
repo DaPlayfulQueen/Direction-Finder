@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geodesy/geodesy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/common_widgets/textindicator.dart';
@@ -23,19 +24,16 @@ class CoordScreenState extends State<CoordScreen> {
   double tempDestinationLat;
   double tempDestinationLong;
 
-
-
   @override
   void initState() {
     super.initState();
     _locator = BlocProvider.of<NavigationBloc>(context).locator;
   }
 
-  _onFieldsValidated() {
+  _onFieldsValidated() async {
     if (_formKey.currentState.validate()) {
-      setState(() {
-        getDistanceToPoint();
-      });
+      await getDistanceToPoint();
+      setState(() {});
     }
   }
 
@@ -101,7 +99,8 @@ class CoordScreenState extends State<CoordScreen> {
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
-            child: StyledButton('Go!', goCallback, color: tempDistance < 0 ? Colors.grey : Color(BLUE_COLOR_HEX)),
+            child: StyledButton('Go!', goCallback,
+                color: tempDistance < 0 ? Colors.grey : Color(BLUE_COLOR_HEX)),
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
@@ -118,11 +117,12 @@ class CoordScreenState extends State<CoordScreen> {
 
   getDistanceToPoint() async {
     Position userPosition = await _locator.getUserPositionOnce();
-    tempDistance = (await _locator.calculateDistanceOnce(
-        userPosition,
-        Position(
-            latitude: tempDestinationLat, longitude: tempDestinationLong))) / 1000;
-
+    tempDistance = (await _locator.calculateDistance(
+            userPosition,
+            Position(
+                latitude: tempDestinationLat,
+                longitude: tempDestinationLong))) /
+        1000;
   }
 
   String getDistanceString() {
@@ -141,7 +141,8 @@ class CoordScreenState extends State<CoordScreen> {
     if (tempDistance == DISTANCE_INIT || tempDistance == DISTANCE_ERROR) {
       Scaffold.of(context).showSnackBar(
         SnackBar(
-          content: Text('First check if your input correct by pressing button "Find"!'),
+          content: Text(
+              'First check if your input correct by pressing button "Find"!'),
         ),
       );
     } else {

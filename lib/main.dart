@@ -8,15 +8,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
 
 void main() {
-
-
-  Locator locator = Locator();
-
   runApp(
     MultiBlocProvider(
       providers: [
-        BlocProvider<NavigationBloc>(
-            create: (context) => NavigationBloc(NavigationState.start, locator)),
+        BlocProvider<NavigationBloc>(create: (context) {
+          Locator locator = Locator();
+          return NavigationBloc(NavigationState.start, locator);
+        }),
       ],
       child: MyApp(),
     ),

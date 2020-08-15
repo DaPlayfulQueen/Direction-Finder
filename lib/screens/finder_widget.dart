@@ -18,19 +18,25 @@ class FinderScreen extends StatefulWidget {
 class FinderScreenState extends State<FinderScreen> {
 
   Locator _locator;
+  Color backgroundColor = Colors.white;
+
 
   @override
   void initState() {
     super.initState();
     _locator = BlocProvider.of<NavigationBloc>(context).locator;
+    _locator.initCompass(updateViewRange);
+    _locator.initRangeFinder(updateViewAngle);
+    updateViewRange();
   }
 
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
-    return Scaffold(
-      body: Stack(
+    return Container(
+      color: backgroundColor,
+      child: Stack(
         children: <Widget>[
           Align(
             alignment: Alignment.topLeft,
@@ -79,7 +85,7 @@ class FinderScreenState extends State<FinderScreen> {
           Align(
             alignment: Alignment.center,
             child: TextIndicator(
-              'Distance: ',
+              'Distance: ${getDistanceString()}',
               width: width * 0.4,
             ),
           ),
@@ -124,4 +130,29 @@ class FinderScreenState extends State<FinderScreen> {
       ),
     );
   }
+
+  void updateViewRange() {
+    var color;
+    if (_locator.distance > 50) {
+      color = Colors.white;
+    } else if (_locator.distance < 50 && _locator.distance > 10) {
+      color = Colors.yellow;
+    } else {
+      color = Colors.green;
+    }
+
+    setState(() {
+      backgroundColor = color;
+    });
+
+  }
+
+  void updateViewAngle() {
+
+  }
+
+  String getDistanceString() {
+    return _locator.distance.toString() + " kms";
+  }
+
 }
