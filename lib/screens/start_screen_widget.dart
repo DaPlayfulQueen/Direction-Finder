@@ -22,12 +22,12 @@ class StartScreen extends StatelessWidget {
               margin: EdgeInsets.only(bottom: height * 0.03),
               child: StyledButton('Navigate to coordinates', () {
                 changeScreen(Screens.coordinates);
-              }, height * 0.08, double.infinity),
+              }),
             ),
             Container(
               child: StyledButton('Navigate to address', () {
                 changeScreen(Screens.addresses);
-              }, height * 0.08, double.infinity),
+              }),
             ),
           ],
         ),

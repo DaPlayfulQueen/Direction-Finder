@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:pelengator/common_widgets/button.dart';
+import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/commons/locator.dart';
 
@@ -56,32 +57,15 @@ class CoordScreenState extends State<CoordScreen> {
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
-            child: StyledButton(
-                'Go!', goCallback(), height * 0.08, double.infinity),
+            child: StyledButton('Go!', goCallback),
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
-            child: StyledButton(
-                'Back :(', backCallback, height * 0.08, double.infinity),
+            child: StyledButton('Back :(', backCallback),
           ),
           Spacer(),
           Container(
-            width: width * double.infinity,
-            height: height * 0.1,
-            padding: EdgeInsets.only(left: 20.0),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4.0),
-                border: Border.all(color: Colors.grey, width: 3.0)),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Distance: ${getDistanceString()}',
-                  style: TextStyle(fontSize: 20.0),
-                )
-              ],
-            ),
+            child: TextIndicator('Distance: '),
           ),
         ],
       ),
@@ -140,12 +124,8 @@ class CoordScreenState extends State<CoordScreen> {
     return distance.toString();
   }
 
-  void disposeControllers() {
-    latController.dispose();
-    longController.dispose();
-  }
 
-  goCallback() {
+  void goCallback() {
     if (distance == DISTANCE_INIT || distance == DISTANCE_ERROR) {
       Scaffold.of(context).showSnackBar(
         SnackBar(
@@ -155,12 +135,10 @@ class CoordScreenState extends State<CoordScreen> {
     } else {
       widget.locator.setTargetPosition(targetLat, targetLong);
       widget.changeAppScreen(Screens.finder);
-      disposeControllers();
     }
   }
 
   backCallback() {
     widget.changeAppScreen(Screens.start);
-    disposeControllers();
   }
 }
