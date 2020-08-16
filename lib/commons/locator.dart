@@ -17,13 +17,15 @@ class Locator {
   final Geolocator _geolocator = Geolocator();
   final Stream<double> _compass = FlutterCompass.events;
   final Geodesy _geodesy = Geodesy();
+  StreamSubscription _compassListener;
+  StreamSubscription _positionListener;
+
 
   final LocationAccuracy desiredAccuracy = LocationAccuracy.best;
 
   void initCompass(Function updateView) async {
     await updateUserPosition();
-    _compass.listen((double directionAngle) async {
-      print("Compass updated");
+    _compassListener = _compass.listen((double directionAngle) async {
       LatLng userLatLng = LatLng(userPosition.latitude, userPosition.longitude);
       LatLng destinationLatLng =
           LatLng(destinationPosition.latitude, destinationPosition.longitude);
@@ -65,7 +67,7 @@ class Locator {
         LocationOptions(accuracy: LocationAccuracy.best);
     Stream<Position> positionStream =
         Geolocator().getPositionStream(locationOptions);
-    positionStream.listen((Position position) async {
+    _positionListener = positionStream.listen((Position position) async {
       userPosition = position;
       distance = await calculateDistance(userPosition, destinationPosition);
       updateView();
@@ -86,8 +88,11 @@ class Locator {
 
   Future<double> calculateDistance(
       Position userPosition, Position targetPosition) async {
+
+
     var targetLat = targetPosition.latitude;
     var targetLong = targetPosition.longitude;
+
 
     if (targetLat < -90 ||
         targetLat > 90 ||
@@ -96,6 +101,7 @@ class Locator {
       return DISTANCE_ERROR;
     }
 
+
     return _geolocator.distanceBetween(
         userPosition.latitude, userPosition.longitude, targetLat, targetLong);
   }
@@ -103,6 +109,17 @@ class Locator {
   void updateUserPosition() async {
     userPosition = await getUserPositionOnce();
   }
+
+  void reset() {
+    _positionListener.cancel();
+    _compassListener.cancel();
+    userPosition = null;
+    destinationPosition = null;
+    distance = DISTANCE_INIT;
+    angleBetween = null;
+    turnDirection = null;
+  }
+
 }
 
 enum TurnDirection { left, right }

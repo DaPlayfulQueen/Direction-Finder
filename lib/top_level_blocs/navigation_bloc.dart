@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:native_state/native_state.dart';
 import 'package:pelengator/commons/locator.dart';
 
 class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
@@ -9,8 +10,11 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
   @override
   Stream<NavigationState> mapEventToState(NavigationEvent event) async* {
 
+
+
     switch (event) {
       case NavigationEvent.toStartScreen:
+
         yield NavigationState.start;
         break;
       case NavigationEvent.toCoordinatesScreen:

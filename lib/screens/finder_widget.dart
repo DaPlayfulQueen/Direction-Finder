@@ -6,6 +6,7 @@ import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/commons/locator.dart';
 import 'package:pelengator/screens/finder/labels.dart';
 import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FinderScreen extends StatefulWidget {
   final bool byAddress;
@@ -25,14 +26,25 @@ class FinderScreenState extends State<FinderScreen>
   int _blinkFrequency = 0;
   AnimationController _animationController;
 
+  SharedPreferences sharedPreferences;
+
   @override
   void initState() {
-    initBlinkerController();
     super.initState();
+    initBlinkerController();
+
     _locator = BlocProvider.of<NavigationBloc>(context).locator;
-    _locator.initCompass(updateViewRange);
-    _locator.initRangeFinder(updateViewAngle);
-//    updateViewRange();
+    _locator.initCompass(updateViewAngle);
+    _locator.initRangeFinder(updateViewRange);
+    SharedPreferences.getInstance().then((instance) {
+      sharedPreferences = instance;
+//
+//      if (widget.byAddress)
+//        sharedPreferences.setString(SCREEN_KEY, SCREEN_FINDER_ADD);
+//      else
+//        sharedPreferences.setString(SCREEN_KEY, SCREEN_FINDER_COORD);
+//
+    });
   }
 
   void initBlinkerController() {
@@ -62,24 +74,31 @@ class FinderScreenState extends State<FinderScreen>
         children: <Widget>[
           Align(
             alignment: Alignment.topLeft,
-            child: _locator.turnDirection == TurnDirection.left ? FadeTransition(
-              opacity: _animationController,
-              child: getLeftLabel(width, height),
-            ) : getLeftLabel(width, height),
+            child:
+                _locator != null && _locator.turnDirection == TurnDirection.left
+                    ? FadeTransition(
+                        opacity: _animationController,
+                        child: getLeftLabel(width, height),
+                      )
+                    : getLeftLabel(width, height),
           ),
           Align(
             alignment: Alignment.topRight,
-            child: _locator.turnDirection == TurnDirection.right ? FadeTransition(
-              opacity: _animationController,
-              child: getRightLabel(width, height)
-            ) : getRightLabel(width, height),
+            child: _locator != null &&
+                    _locator.turnDirection == TurnDirection.right
+                ? FadeTransition(
+                    opacity: _animationController,
+                    child: getRightLabel(width, height))
+                : getRightLabel(width, height),
           ),
           Align(
             alignment: Alignment.center,
             child: Container(
               padding: EdgeInsets.all(50.0),
               child: TextIndicator(
-                'Distance: ${getDistanceString()}',
+                _locator == null
+                    ? 'Distance:'
+                    : 'Distance: ${getDistanceString()}',
                 width: width * 0.5,
               ),
             ),
@@ -96,6 +115,10 @@ class FinderScreenState extends State<FinderScreen>
                     child: StyledButton(
                       'Back',
                       () {
+//                        sharedPreferences.remove(FINDER_SCREEN_LAT);
+//                        sharedPreferences.remove(FINDER_SCREEN_LONG);
+                        sharedPreferences.remove(SCREEN_KEY);
+                        _locator.reset();
                         BlocProvider.of<NavigationBloc>(context).add(
                             widget.byAddress
                                 ? NavigationEvent.toAddressesScreen
@@ -110,8 +133,12 @@ class FinderScreenState extends State<FinderScreen>
                     child: StyledButton(
                       'Drop',
                       () {
+//                        sharedPreferences.remove(FINDER_SCREEN_LAT);
+//                        sharedPreferences.remove(FINDER_SCREEN_LONG);
+                        sharedPreferences.remove(SCREEN_KEY);
                         BlocProvider.of<NavigationBloc>(context)
                             .add(NavigationEvent.toStartScreen);
+                        _locator.reset();
                       },
                       color: Colors.transparent,
                       textColor: Color(BLUE_COLOR_HEX),
@@ -142,7 +169,6 @@ class FinderScreenState extends State<FinderScreen>
   }
 
   void updateViewAngle() {
-
     setState(() {
       if (_locator.angleBetween > 45) {
         _blinkFrequency = 2;
@@ -154,6 +180,12 @@ class FinderScreenState extends State<FinderScreen>
   }
 
   String getDistanceString() {
-    return _locator.distance.toString() + " kms";
+    return _locator.distance.round().toString() + " meters";
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 }

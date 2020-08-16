@@ -7,6 +7,7 @@ import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/commons/locator.dart';
 import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CoordScreen extends StatefulWidget {
   CoordScreen();
@@ -20,12 +21,18 @@ class CoordScreenState extends State<CoordScreen> {
 
   Locator _locator;
 
-  double tempDistance = DISTANCE_INIT;
-  double tempDestinationLat;
-  double tempDestinationLong;
+  double _tempDistance = DISTANCE_INIT;
+  double _tempDestinationLat;
+  double _tempDestinationLong;
+
+  SharedPreferences sharedPreferences;
 
   @override
   void initState() {
+    SharedPreferences.getInstance().then((instance) {
+      sharedPreferences = instance;
+      sharedPreferences.setString(SCREEN_KEY, SCREEN_COORD);
+    });
     super.initState();
     _locator = BlocProvider.of<NavigationBloc>(context).locator;
   }
@@ -62,7 +69,7 @@ class CoordScreenState extends State<CoordScreen> {
                       if (parsed == null) {
                         return "It's not a number";
                       }
-                      tempDestinationLat = parsed;
+                      _tempDestinationLat = parsed;
                       return null;
                     },
                     decoration: InputDecoration(
@@ -80,7 +87,7 @@ class CoordScreenState extends State<CoordScreen> {
                       if (parsed == null) {
                         return "It's not a number";
                       }
-                      tempDestinationLong = parsed;
+                      _tempDestinationLong = parsed;
                       return null;
                     },
                     decoration: InputDecoration(
@@ -95,16 +102,25 @@ class CoordScreenState extends State<CoordScreen> {
             child: StyledButton(
               'Find',
               _onFieldsValidated,
+              textColor: Colors.white,
             ),
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
-            child: StyledButton('Go!', goCallback,
-                color: tempDistance < 0 ? Colors.grey : Color(BLUE_COLOR_HEX)),
+            child: StyledButton(
+              'Go!',
+              goCallback,
+              color: _tempDistance < 0 ? Colors.grey : Color(BLUE_COLOR_HEX),
+              textColor: Colors.white,
+            ),
           ),
           Container(
             margin: EdgeInsets.only(bottom: height * 0.05),
-            child: StyledButton('Back :(', backCallback),
+            child: StyledButton(
+              'Back :(',
+              backCallback,
+              textColor: Colors.white,
+            ),
           ),
           Spacer(),
           Container(
@@ -117,28 +133,28 @@ class CoordScreenState extends State<CoordScreen> {
 
   getDistanceToPoint() async {
     Position userPosition = await _locator.getUserPositionOnce();
-    tempDistance = (await _locator.calculateDistance(
+    _tempDistance = (await _locator.calculateDistance(
             userPosition,
             Position(
-                latitude: tempDestinationLat,
-                longitude: tempDestinationLong))) /
+                latitude: _tempDestinationLat,
+                longitude: _tempDestinationLong))) /
         1000;
   }
 
   String getDistanceString() {
-    if (tempDistance == DISTANCE_INIT) {
+    if (_tempDistance == DISTANCE_INIT) {
       return "";
     }
 
-    if (tempDistance == DISTANCE_ERROR) {
+    if (_tempDistance == DISTANCE_ERROR) {
       return "Calculation error! Looks like coordinates are incorrect";
     }
 
-    return tempDistance.toString() + " kms";
+    return _tempDistance.toString() + " kms";
   }
 
   goCallback() {
-    if (tempDistance == DISTANCE_INIT || tempDistance == DISTANCE_ERROR) {
+    if (_tempDistance == DISTANCE_INIT || _tempDistance == DISTANCE_ERROR) {
       Scaffold.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -146,14 +162,15 @@ class CoordScreenState extends State<CoordScreen> {
         ),
       );
     } else {
-      _locator.setTargetPosition(tempDestinationLat, tempDestinationLong);
-      _locator.setInitialDistanceToPosition(tempDistance);
+      _locator.setTargetPosition(_tempDestinationLat, _tempDestinationLong);
+      _locator.setInitialDistanceToPosition(_tempDistance);
       BlocProvider.of<NavigationBloc>(context)
-          .add(NavigationEvent.toFinderScreenAdd);
+          .add(NavigationEvent.toFinderScreenCoord);
     }
   }
 
   backCallback() {
+    sharedPreferences.remove(SCREEN_KEY);
     BlocProvider.of<NavigationBloc>(context).add(NavigationEvent.toStartScreen);
   }
 }
