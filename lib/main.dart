@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
               case NavigationState.coordinates:
                 return CoordScreen();
               case NavigationState.addresses:
-                return AddressScreen();
+                return Container();
               case NavigationState.finderAddress:
                 return FinderScreen(true);
               case NavigationState.finderCoordinates:

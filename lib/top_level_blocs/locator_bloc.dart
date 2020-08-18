@@ -7,20 +7,21 @@ import 'package:geolocator/geolocator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum TurnDirection { left, right }
-
 class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
   Position userPosition;
   Position destinationPosition;
   double lastKnownDistance = DISTANCE_INIT;
-  double lastKnownAngle;
-  TurnDirection turnDirection;
+  double lastKnownAngle = ANGLE_INIT;
+  TurnDirection lastKnownTurnDirection;
 
   final Geolocator _geolocator = Geolocator();
   final Stream<double> _compass = FlutterCompass.events;
   final Geodesy _geodesy = Geodesy();
-  StreamSubscription _compassListener;
-  StreamSubscription _positionListener;
+
+  Stream compassStream;
+
+  StreamSubscription compassSubscription;
+  StreamSubscription positionSubscription;
 
   final LocationAccuracy desiredAccuracy = LocationAccuracy.best;
 
@@ -42,50 +43,55 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
       yield CoordsUpdated(lastKnownDistance);
     }
 
+    if (event is ActivateListeners) {
+      await initCompass();
+      await initRangeFinder();
+      yield TargetDirectionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
+    }
   }
 
-  void initCompass() async {
-    _compassListener = _compass.listen((double directionAngle) {
-      getUserPositionOnce().then((userPosition) async* {
-        LatLng destinationLatLng =
-            LatLng(destinationPosition.latitude, destinationPosition.longitude);
+  Future<void> initCompass() async {
+    compassStream = _compass.asyncMap((double directionAngle) async {
+      var userPosition = await getUserPositionOnce();
 
-        var userLatLng = LatLng(userPosition.latitude, userPosition.longitude);
-        var bearingAngle =
-            _geodesy.bearingBetweenTwoGeoPoints(userLatLng, destinationLatLng);
+      LatLng destinationLatLng =
+          LatLng(destinationPosition.latitude, destinationPosition.longitude);
 
-        if (bearingAngle > directionAngle) {
-          var baseAngle = bearingAngle - directionAngle;
-          if (baseAngle < 180) {
-            lastKnownAngle = baseAngle;
-            turnDirection = TurnDirection.right;
-          } else {
-            lastKnownAngle = 360 - baseAngle;
-            turnDirection = TurnDirection.left;
-          }
+      LatLng userLatLng = LatLng(userPosition.latitude, userPosition.longitude);
+      var bearingAngle =
+          _geodesy.bearingBetweenTwoGeoPoints(userLatLng, destinationLatLng);
+
+      if (bearingAngle > directionAngle) {
+        var baseAngle = bearingAngle - directionAngle;
+        if (baseAngle < 180) {
+          lastKnownAngle = baseAngle;
+          lastKnownTurnDirection = TurnDirection.right;
         } else {
-          var baseAngle = directionAngle - bearingAngle;
-          if (baseAngle < 180) {
-            lastKnownAngle = baseAngle;
-            turnDirection = TurnDirection.left;
-          } else {
-            lastKnownAngle = 360 - baseAngle;
-            turnDirection = TurnDirection.right;
-          }
+          lastKnownAngle = 360 - baseAngle;
+          lastKnownTurnDirection = TurnDirection.left;
         }
+      } else {
+        var baseAngle = directionAngle - bearingAngle;
+        if (baseAngle < 180) {
+          lastKnownAngle = baseAngle;
+          lastKnownTurnDirection = TurnDirection.left;
+        } else {
+          lastKnownAngle = 360 - baseAngle;
+          lastKnownTurnDirection = TurnDirection.right;
+        }
+      }
 
-        yield LocatorOnFinderScreen(lastKnownDistance, lastKnownAngle);
-      });
+      return TargetDirectionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
     });
   }
 
-  void initRangeFinder() async {
+  Future<void> initRangeFinder() async {
     Stream<Position> positionStream = Geolocator()
         .getPositionStream(LocationOptions(accuracy: desiredAccuracy));
-    _positionListener = positionStream.listen((Position position) async* {
+    positionSubscription = positionStream.listen((Position position) async* {
       userPosition = position;
       lastKnownDistance = await getDistance(userPosition, destinationPosition);
-      yield LocatorOnFinderScreen(lastKnownDistance, lastKnownAngle);
+      yield TargetDirectionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
     });
   }
 
@@ -118,15 +124,14 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
   }
 
   void reset() {
-    _positionListener.cancel();
-    _compassListener.cancel();
+    positionSubscription.cancel();
+    compassSubscription.cancel();
     userPosition = null;
     destinationPosition = null;
     lastKnownDistance = DISTANCE_INIT;
     lastKnownAngle = null;
-    turnDirection = null;
+    lastKnownTurnDirection = null;
   }
-
 }
 
 abstract class LocatorEvent {}
@@ -150,12 +155,14 @@ class CoordsUpdated extends LocatorState {
   CoordsUpdated(distance) : super(distance: distance);
 }
 
-class LocatorAtStart extends LocatorState {
-}
+class LocatorAtStart extends LocatorState {}
 
-class LocatorOnFinderScreen extends LocatorState {
+class TargetDirectionUpdated extends LocatorState {
   double distance;
   double angle;
+  TurnDirection turnDirection;
 
-  LocatorOnFinderScreen(this.distance, this.angle);
+  TargetDirectionUpdated(this.distance, this.angle, this.turnDirection);
 }
+
+enum TurnDirection { left, right }

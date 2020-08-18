@@ -4,9 +4,9 @@ import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/commons/locator.dart';
-import 'package:pelengator/screens/finder/labels.dart';
+import 'package:pelengator/top_level_blocs/locator_bloc.dart';
 import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 
 class FinderScreen extends StatefulWidget {
   final bool byAddress;
@@ -19,32 +19,19 @@ class FinderScreen extends StatefulWidget {
 
 class FinderScreenState extends State<FinderScreen>
     with SingleTickerProviderStateMixin {
-  Locator _locator;
+  LocatorBloc _locatorBloc;
 
   Color backgroundColor = Colors.white;
 
   int _blinkFrequency = 0;
   AnimationController _animationController;
 
-  SharedPreferences sharedPreferences;
-
   @override
   void initState() {
+    _locatorBloc = BlocProvider.of<LocatorBloc>(context);
+    _locatorBloc.add(ActivateListeners());
     super.initState();
     initBlinkerController();
-
-//    _locator = BlocProvider.of<NavigationBloc>(context).locator;
-    _locator.initCompass(updateViewAngle);
-    _locator.initRangeFinder(updateViewRange);
-    SharedPreferences.getInstance().then((instance) {
-      sharedPreferences = instance;
-//
-//      if (widget.byAddress)
-//        sharedPreferences.setString(SCREEN_KEY, SCREEN_FINDER_ADD);
-//      else
-//        sharedPreferences.setString(SCREEN_KEY, SCREEN_FINDER_COORD);
-//
-    });
   }
 
   void initBlinkerController() {
@@ -54,6 +41,7 @@ class FinderScreenState extends State<FinderScreen>
   }
 
   void changeBlinkDuration() {
+//    _blinkFrequency = getBlinkFrequency();
     if (_blinkFrequency != 0) {
       _animationController.duration =
           Duration(milliseconds: (1000 / _blinkFrequency).round());
@@ -65,127 +53,166 @@ class FinderScreenState extends State<FinderScreen>
 
   @override
   Widget build(BuildContext context) {
-    changeBlinkDuration();
+//    changeBlinkDuration();
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
-    return Container(
-      color: backgroundColor,
-      child: Stack(
-        children: <Widget>[
-          Align(
-            alignment: Alignment.topLeft,
-            child:
-                _locator != null && _locator.turnDirection == TurnDirection.left
-                    ? FadeTransition(
-                        opacity: _animationController,
-                        child: getLeftLabel(width, height),
-                      )
-                    : getLeftLabel(width, height),
-          ),
-          Align(
-            alignment: Alignment.topRight,
-            child: _locator != null &&
-                    _locator.turnDirection == TurnDirection.right
-                ? FadeTransition(
-                    opacity: _animationController,
-                    child: getRightLabel(width, height))
-                : getRightLabel(width, height),
-          ),
-          Align(
-            alignment: Alignment.center,
-            child: Container(
-              padding: EdgeInsets.all(50.0),
-              child: TextIndicator(
-                _locator == null
-                    ? 'Distance:'
-                    : 'Distance: ${getDistanceString()}',
-                width: width * 0.5,
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomLeft,
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: width * 0.05),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Container(
-                    margin: EdgeInsets.only(bottom: height * 0.02),
-                    child: StyledButton(
-                      'Back',
-                      () {
-//                        sharedPreferences.remove(FINDER_SCREEN_LAT);
-//                        sharedPreferences.remove(FINDER_SCREEN_LONG);
-                        sharedPreferences.remove(SCREEN_KEY);
-                        _locator.reset();
-                        BlocProvider.of<NavigationBloc>(context).add(
-                            widget.byAddress
-                                ? NavigationEvent.toAddressesScreen
-                                : NavigationEvent.toCoordinatesScreen);
-                      },
-                      color: Colors.transparent,
-                      textColor: Color(BLUE_COLOR_HEX),
+    return BlocBuilder<LocatorBloc, LocatorState>(
+      builder: (context, state) => StreamBuilder(
+        stream: _locatorBloc.compassStream,
+        builder: (context, snapshot) {
+          return Container(
+            color: snapshot.data == null
+                ? Colors.white
+                : getBackgroundColor(snapshot.data.distance),
+            child: Stack(
+              children: <Widget>[
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: snapshot.data != null &&
+                          snapshot.data.turnDirection == TurnDirection.left
+                      ? FadeTransition(
+                          opacity: _animationController,
+                          child: getLeftLabel(width, height),
+                        )
+                      : getLeftLabel(width, height),
+                ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: snapshot.data != null &&
+                          snapshot.data.turnDirection == TurnDirection.right
+                      ? FadeTransition(
+                          opacity: _animationController,
+                          child: getRightLabel(width, height))
+                      : getRightLabel(width, height),
+                ),
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    padding: EdgeInsets.all(50.0),
+                    child: TextIndicator(
+                      snapshot.data == null
+                          ? 'Distance:'
+                          : 'Distance: ${snapshot.data.distance}',
+                      width: width * 0.5,
                     ),
                   ),
-                  Container(
-                    margin: EdgeInsets.only(bottom: height * 0.06),
-                    child: StyledButton(
-                      'Drop',
-                      () {
-//                        sharedPreferences.remove(FINDER_SCREEN_LAT);
-//                        sharedPreferences.remove(FINDER_SCREEN_LONG);
-                        sharedPreferences.remove(SCREEN_KEY);
-                        BlocProvider.of<NavigationBloc>(context)
-                            .add(NavigationEvent.toStartScreen);
-                        _locator.reset();
-                      },
-                      color: Colors.transparent,
-                      textColor: Color(BLUE_COLOR_HEX),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: width * 0.05),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Container(
+                          margin: EdgeInsets.only(bottom: height * 0.02),
+                          child: StyledButton(
+                            'Back',
+                            () {
+                              _locatorBloc.reset();
+                              BlocProvider.of<NavigationBloc>(context).add(
+                                  widget.byAddress
+                                      ? NavigationEvent.toAddressesScreen
+                                      : NavigationEvent.toCoordinatesScreen);
+                            },
+                            color: Colors.transparent,
+                            textColor: Color(BLUE_COLOR_HEX),
+                          ),
+                        ),
+                        Container(
+                          margin: EdgeInsets.only(bottom: height * 0.06),
+                          child: StyledButton(
+                            'Drop',
+                            () {
+                              BlocProvider.of<NavigationBloc>(context)
+                                  .add(NavigationEvent.toStartScreen);
+                              _locatorBloc.reset();
+                            },
+                            color: Colors.transparent,
+                            textColor: Color(BLUE_COLOR_HEX),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  void updateViewRange() {
+  Color getBackgroundColor(distance) {
     var color;
-    if (_locator.lastKnownDistance > 50) {
+    if (distance > 50) {
       color = Colors.white;
-    } else if (_locator.lastKnownDistance < 50 && _locator.lastKnownDistance > 10) {
+    } else if (distance < 50 && distance > 10) {
       color = Colors.yellow;
     } else {
       color = Colors.green;
     }
 
-    setState(() {
-      backgroundColor = color;
-    });
+    return color;
   }
 
-  void updateViewAngle() {
-    setState(() {
-      if (_locator.lastKnownAngle > 45) {
-        _blinkFrequency = 2;
-      }
-      if (_locator.lastKnownAngle > 90) {
-        _blinkFrequency = 5;
-      }
-    });
+  void getBlinkFrequency(angle) {
+    if (angle > 45) {
+      _blinkFrequency = 2;
+    }
+    if (angle > 90) {
+      _blinkFrequency = 5;
+    }
   }
 
-  String getDistanceString() {
-    return _locator.lastKnownDistance.round().toString() + " meters";
-  }
+//  String getDistanceString() {
+//    return _locator.lastKnownDistance.round().toString() + " meters";
+//  }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
+
+  Widget getLeftLabel(width, height) => Container(
+        width: width * 0.25,
+        margin: EdgeInsets.fromLTRB(width * 0.05, height * 0.1, 0, 0),
+        padding: EdgeInsets.symmetric(
+            horizontal: width * 0.05, vertical: height * 0.02),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Left',
+              style: TextStyle(fontSize: 20, color: Color(BLUE_COLOR_HEX)),
+            ),
+          ],
+        ),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(5.0),
+            border: Border.all(color: Color(BLUE_COLOR_HEX), width: 1.0)),
+      );
+
+  Widget getRightLabel(width, height) => Container(
+        width: width * 0.25,
+        margin: EdgeInsets.fromLTRB(0, height * 0.1, width * 0.05, 0),
+        padding: EdgeInsets.symmetric(
+            horizontal: width * 0.05, vertical: height * 0.02),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Right',
+              style: TextStyle(fontSize: 20, color: Color(BLUE_COLOR_HEX)),
+            ),
+          ],
+        ),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(5.0),
+            border: Border.all(color: Color(BLUE_COLOR_HEX), width: 1.0)),
+      );
 }
