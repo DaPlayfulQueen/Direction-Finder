@@ -4,7 +4,7 @@ import 'package:native_state/native_state.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/screens/address_screen_widget.dart';
 import 'package:pelengator/screens/coordscreen_widget.dart';
-import 'package:pelengator/screens/finder_widget.dart';
+import 'file:///G:/dev/proj/pelengator/lib/screens/finder/finder_widget.dart';
 import 'commons/locator.dart';
 import 'package:pelengator/screens/start_screen_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

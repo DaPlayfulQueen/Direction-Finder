@@ -9,8 +9,8 @@ import 'consts.dart';
 class Locator {
   Position userPosition;
   Position destinationPosition;
-  double distance;
-  double angleBetween;
+  double lastKnownDistance;
+  double lastKnownAngle;
   TurnDirection turnDirection;
 
   //final?
@@ -25,7 +25,7 @@ class Locator {
 
   void initCompass(Function updateView) async {
     await updateUserPosition();
-    _compassListener = _compass.listen((double directionAngle) async {
+    _compassListener = _compass.listen((double directionAngle) async* {
       LatLng userLatLng = LatLng(userPosition.latitude, userPosition.longitude);
       LatLng destinationLatLng =
           LatLng(destinationPosition.latitude, destinationPosition.longitude);
@@ -39,37 +39,39 @@ class Locator {
       if (bearingAngle > directionAngle) {
         var baseAngle = bearingAngle - directionAngle;
         if (baseAngle < 180) {
-          angleBetween = baseAngle;
+          lastKnownAngle = baseAngle;
           turnDirection = TurnDirection.right;
         } else {
-          angleBetween = 360 - baseAngle;
+          lastKnownAngle = 360 - baseAngle;
           turnDirection = TurnDirection.left;
         }
       } else {
         var baseAngle = directionAngle - bearingAngle;
         if (baseAngle < 180) {
-          angleBetween = baseAngle;
+          lastKnownAngle = baseAngle;
           turnDirection = TurnDirection.left;
         } else {
-          angleBetween = 360 - baseAngle;
+          lastKnownAngle = 360 - baseAngle;
           turnDirection = TurnDirection.right;
         }
       }
 
-      print("The angle is $angleBetween, turn direction is $turnDirection");
+      print("The angle is $lastKnownAngle, turn direction is $turnDirection");
       updateView();
+
+//    yield lastKnownAngle;
+
     });
   }
 
   void initRangeFinder(Function updateView) async {
-    await updateUserPosition();
     const LocationOptions locationOptions =
         LocationOptions(accuracy: LocationAccuracy.best);
     Stream<Position> positionStream =
         Geolocator().getPositionStream(locationOptions);
-    _positionListener = positionStream.listen((Position position) async {
+    _positionListener = positionStream.listen((Position position) async* {
       userPosition = position;
-      distance = await calculateDistance(userPosition, destinationPosition);
+      lastKnownDistance = await calculateDistance(userPosition, destinationPosition);
       updateView();
     });
   }
@@ -83,7 +85,7 @@ class Locator {
   }
 
   void setInitialDistanceToPosition(double distance) {
-    this.distance = distance;
+    this.lastKnownDistance = distance;
   }
 
   Future<double> calculateDistance(
@@ -115,8 +117,8 @@ class Locator {
     _compassListener.cancel();
     userPosition = null;
     destinationPosition = null;
-    distance = DISTANCE_INIT;
-    angleBetween = null;
+    lastKnownDistance = DISTANCE_INIT;
+    lastKnownAngle = null;
     turnDirection = null;
   }
 

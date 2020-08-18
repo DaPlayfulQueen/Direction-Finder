@@ -155,9 +155,9 @@ class FinderScreenState extends State<FinderScreen>
 
   void updateViewRange() {
     var color;
-    if (_locator.distance > 50) {
+    if (_locator.lastKnownDistance > 50) {
       color = Colors.white;
-    } else if (_locator.distance < 50 && _locator.distance > 10) {
+    } else if (_locator.lastKnownDistance < 50 && _locator.lastKnownDistance > 10) {
       color = Colors.yellow;
     } else {
       color = Colors.green;
@@ -170,17 +170,17 @@ class FinderScreenState extends State<FinderScreen>
 
   void updateViewAngle() {
     setState(() {
-      if (_locator.angleBetween > 45) {
+      if (_locator.lastKnownAngle > 45) {
         _blinkFrequency = 2;
       }
-      if (_locator.angleBetween > 90) {
+      if (_locator.lastKnownAngle > 90) {
         _blinkFrequency = 5;
       }
     });
   }
 
   String getDistanceString() {
-    return _locator.distance.round().toString() + " meters";
+    return _locator.lastKnownDistance.round().toString() + " meters";
   }
 
   @override
