@@ -33,7 +33,7 @@ class FinderScreenState extends State<FinderScreen>
     super.initState();
     initBlinkerController();
 
-    _locator = BlocProvider.of<NavigationBloc>(context).locator;
+//    _locator = BlocProvider.of<NavigationBloc>(context).locator;
     _locator.initCompass(updateViewAngle);
     _locator.initRangeFinder(updateViewRange);
     SharedPreferences.getInstance().then((instance) {

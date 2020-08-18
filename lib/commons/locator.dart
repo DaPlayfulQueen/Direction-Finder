@@ -13,7 +13,6 @@ class Locator {
   double lastKnownAngle;
   TurnDirection turnDirection;
 
-  //final?
   final Geolocator _geolocator = Geolocator();
   final Stream<double> _compass = FlutterCompass.events;
   final Geodesy _geodesy = Geodesy();

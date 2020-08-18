@@ -50,7 +50,7 @@ class AddressScreenState extends State<AddressScreen> {
       }
     });
     super.initState();
-    _locator = BlocProvider.of<NavigationBloc>(context).locator;
+//    _locator = BlocProvider.of<NavigationBloc>(context).locator;
   }
 
   @override

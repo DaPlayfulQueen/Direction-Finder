@@ -5,13 +5,14 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geodesy/geodesy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:pelengator/commons/consts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum TurnDirection { left, right }
 
 class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
   Position userPosition;
   Position destinationPosition;
-  double lastKnownDistance;
+  double lastKnownDistance = DISTANCE_INIT;
   double lastKnownAngle;
   TurnDirection turnDirection;
 
@@ -23,12 +24,27 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
 
   final LocationAccuracy desiredAccuracy = LocationAccuracy.best;
 
-  LocatorBloc() : super(LocatorAtStart());
+  SharedPreferences _sharedPreferences;
+
+  LocatorBloc() : super(LocatorAtStart()) {
+    SharedPreferences.getInstance().then((instance) {
+      _sharedPreferences = instance;
+      _sharedPreferences.setString(SCREEN_KEY, SCREEN_COORD);
+    });
+  }
 
   @override
-  Stream<LocatorState> mapEventToState(LocatorEvent event) {}
+  Stream<LocatorState> mapEventToState(LocatorEvent event) async* {
+    if (event is NewTargetCoords) {
+      setDestinationPosition(event.latitude, event.longitude);
+      userPosition = await getUserPositionOnce();
+      lastKnownDistance = await getDistance(userPosition, destinationPosition);
+      yield CoordsUpdated(lastKnownDistance);
+    }
 
-  void initCompass(Function updateView) async {
+  }
+
+  void initCompass() async {
     _compassListener = _compass.listen((double directionAngle) {
       getUserPositionOnce().then((userPosition) async* {
         LatLng destinationLatLng =
@@ -58,22 +74,18 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
           }
         }
 
-        print(
-            "The bearing angle is $bearingAngle, user direction is $directionAngle");
-        print("The angle is $lastKnownAngle, turn direction is $turnDirection");
-
         yield LocatorOnFinderScreen(lastKnownDistance, lastKnownAngle);
       });
     });
   }
 
-  void initRangeFinder(Function updateView) async {
-    Stream<Position> positionStream =
-        Geolocator().getPositionStream(LocationOptions(accuracy: desiredAccuracy));
+  void initRangeFinder() async {
+    Stream<Position> positionStream = Geolocator()
+        .getPositionStream(LocationOptions(accuracy: desiredAccuracy));
     _positionListener = positionStream.listen((Position position) async* {
       userPosition = position;
       lastKnownDistance = await getDistance(userPosition, destinationPosition);
-      yield LocatorOnFinderScreen(lastKnownDistance, lastKnownAngle)
+      yield LocatorOnFinderScreen(lastKnownDistance, lastKnownAngle);
     });
   }
 
@@ -81,7 +93,7 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
     return _geolocator.getCurrentPosition(desiredAccuracy: desiredAccuracy);
   }
 
-  void setTargetPosition(double lat, double long) {
+  void setDestinationPosition(double lat, double long) {
     destinationPosition = Position(latitude: lat, longitude: long);
   }
 
@@ -114,20 +126,32 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
     lastKnownAngle = null;
     turnDirection = null;
   }
+
 }
 
 abstract class LocatorEvent {}
 
-class SetNewCoords extends LocatorEvent {
+class NewTargetCoords extends LocatorEvent {
   double latitude;
   double longitude;
 
-  SetNewCoords(this.latitude, this.longitude);
+  NewTargetCoords(this.latitude, this.longitude);
 }
 
-abstract class LocatorState {}
+class ActivateListeners extends LocatorEvent {}
 
-class LocatorAtStart extends LocatorState {}
+abstract class LocatorState {
+  double distance;
+
+  LocatorState({this.distance = DISTANCE_INIT});
+}
+
+class CoordsUpdated extends LocatorState {
+  CoordsUpdated(distance) : super(distance: distance);
+}
+
+class LocatorAtStart extends LocatorState {
+}
 
 class LocatorOnFinderScreen extends LocatorState {
   double distance;

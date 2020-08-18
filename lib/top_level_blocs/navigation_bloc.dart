@@ -3,9 +3,8 @@ import 'package:native_state/native_state.dart';
 import 'package:pelengator/commons/locator.dart';
 
 class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
-  final Locator locator;
 
-  NavigationBloc(NavigationState initialState, this.locator) : super(initialState);
+  NavigationBloc(NavigationState initialState) : super(initialState);
 
   @override
   Stream<NavigationState> mapEventToState(NavigationEvent event) async* {
