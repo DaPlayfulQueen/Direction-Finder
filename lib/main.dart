@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pelengator/screens/address_screen_widget.dart';
 import 'package:pelengator/screens/coordscreen_widget.dart';
-import 'package:pelengator/screens/finder/finder_widget.dart';
+import 'file:///G:/dev/proj/pelengator/lib/screens/finder_widget.dart';
 import 'package:pelengator/top_level_blocs/locator_bloc.dart';
 import 'package:pelengator/screens/start_screen_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
               case NavigationState.coordinates:
                 return CoordScreen();
               case NavigationState.addresses:
-                return Container();
+                return AddressScreen();
               case NavigationState.finderAddress:
                 return FinderScreen(true);
               case NavigationState.finderCoordinates:

@@ -3,10 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pelengator/common_widgets/button.dart';
 import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
-import 'package:pelengator/commons/locator.dart';
 import 'package:pelengator/top_level_blocs/locator_bloc.dart';
 import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
-
 
 class FinderScreen extends StatefulWidget {
   final bool byAddress;
@@ -29,7 +27,7 @@ class FinderScreenState extends State<FinderScreen>
   @override
   void initState() {
     _locatorBloc = BlocProvider.of<LocatorBloc>(context);
-    _locatorBloc.add(ActivateListeners());
+    _locatorBloc.add(StartListenUserPosition());
     super.initState();
     initBlinkerController();
   }
@@ -40,8 +38,8 @@ class FinderScreenState extends State<FinderScreen>
     _animationController.repeat();
   }
 
-  void changeBlinkDuration() {
-//    _blinkFrequency = getBlinkFrequency();
+  void changeBlinkDuration(angle) {
+    updateBlinkFrequency(angle);
     if (_blinkFrequency != 0) {
       _animationController.duration =
           Duration(milliseconds: (1000 / _blinkFrequency).round());
@@ -53,13 +51,15 @@ class FinderScreenState extends State<FinderScreen>
 
   @override
   Widget build(BuildContext context) {
-//    changeBlinkDuration();
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     return BlocBuilder<LocatorBloc, LocatorState>(
       builder: (context, state) => StreamBuilder(
         stream: _locatorBloc.compassStream,
         builder: (context, snapshot) {
+          if (snapshot.data != null) {
+            changeBlinkDuration(snapshot.data.angle);
+          }
           return Container(
             color: snapshot.data == null
                 ? Colors.white
@@ -109,7 +109,7 @@ class FinderScreenState extends State<FinderScreen>
                           child: StyledButton(
                             'Back',
                             () {
-                              _locatorBloc.reset();
+                              _locatorBloc.add(StopListenUserPosition());
                               BlocProvider.of<NavigationBloc>(context).add(
                                   widget.byAddress
                                       ? NavigationEvent.toAddressesScreen
@@ -124,9 +124,9 @@ class FinderScreenState extends State<FinderScreen>
                           child: StyledButton(
                             'Drop',
                             () {
+                              _locatorBloc.add(StopListenUserPosition());
                               BlocProvider.of<NavigationBloc>(context)
                                   .add(NavigationEvent.toStartScreen);
-                              _locatorBloc.reset();
                             },
                             color: Colors.transparent,
                             textColor: Color(BLUE_COLOR_HEX),
@@ -157,7 +157,7 @@ class FinderScreenState extends State<FinderScreen>
     return color;
   }
 
-  void getBlinkFrequency(angle) {
+  void updateBlinkFrequency(angle) {
     if (angle > 45) {
       _blinkFrequency = 2;
     }
@@ -166,9 +166,6 @@ class FinderScreenState extends State<FinderScreen>
     }
   }
 
-//  String getDistanceString() {
-//    return _locator.lastKnownDistance.round().toString() + " meters";
-//  }
 
   @override
   void dispose() {

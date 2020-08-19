@@ -27,7 +27,7 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
 
   SharedPreferences _sharedPreferences;
 
-  LocatorBloc() : super(LocatorAtStart()) {
+  LocatorBloc() : super(LocationTrackingDisabled()) {
     SharedPreferences.getInstance().then((instance) {
       _sharedPreferences = instance;
       _sharedPreferences.setString(SCREEN_KEY, SCREEN_COORD);
@@ -40,14 +40,19 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
       setDestinationPosition(event.latitude, event.longitude);
       userPosition = await getUserPositionOnce();
       lastKnownDistance = await getDistance(userPosition, destinationPosition);
-      yield CoordsUpdated(lastKnownDistance);
+      yield DestinationCoordsSet(distance:  lastKnownDistance);
     }
 
-    if (event is ActivateListeners) {
+    if (event is StartListenUserPosition) {
       await initCompass();
       await initRangeFinder();
-      yield TargetDirectionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
+      yield UserPositionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
     }
+
+    if (event is StopListenUserPosition) {
+      yield UserPositionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
+    }
+
   }
 
   Future<void> initCompass() async {
@@ -81,7 +86,7 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
         }
       }
 
-      return TargetDirectionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
+      return UserPositionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
     });
   }
 
@@ -91,7 +96,7 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
     positionSubscription = positionStream.listen((Position position) async* {
       userPosition = position;
       lastKnownDistance = await getDistance(userPosition, destinationPosition);
-      yield TargetDirectionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
+      yield UserPositionUpdated(lastKnownDistance, lastKnownAngle, lastKnownTurnDirection);
     });
   }
 
@@ -129,7 +134,7 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
     userPosition = null;
     destinationPosition = null;
     lastKnownDistance = DISTANCE_INIT;
-    lastKnownAngle = null;
+    lastKnownAngle = ANGLE_INIT;
     lastKnownTurnDirection = null;
   }
 }
@@ -143,26 +148,26 @@ class NewTargetCoords extends LocatorEvent {
   NewTargetCoords(this.latitude, this.longitude);
 }
 
-class ActivateListeners extends LocatorEvent {}
+class StartListenUserPosition extends LocatorEvent {}
 
-abstract class LocatorState {
+class StopListenUserPosition extends LocatorEvent {}
+
+abstract class LocatorState {}
+
+class LocationTrackingDisabled extends LocatorState {}
+
+class DestinationCoordsSet extends LocatorState {
   double distance;
 
-  LocatorState({this.distance = DISTANCE_INIT});
+  DestinationCoordsSet({this.distance = DISTANCE_INIT});
 }
 
-class CoordsUpdated extends LocatorState {
-  CoordsUpdated(distance) : super(distance: distance);
-}
-
-class LocatorAtStart extends LocatorState {}
-
-class TargetDirectionUpdated extends LocatorState {
+class UserPositionUpdated extends LocatorState {
   double distance;
   double angle;
   TurnDirection turnDirection;
 
-  TargetDirectionUpdated(this.distance, this.angle, this.turnDirection);
+  UserPositionUpdated(this.distance, this.angle, this.turnDirection);
 }
 
 enum TurnDirection { left, right }

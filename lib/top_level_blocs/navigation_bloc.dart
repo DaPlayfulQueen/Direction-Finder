@@ -1,6 +1,4 @@
 import 'package:bloc/bloc.dart';
-import 'package:native_state/native_state.dart';
-import 'package:pelengator/commons/locator.dart';
 
 class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
 

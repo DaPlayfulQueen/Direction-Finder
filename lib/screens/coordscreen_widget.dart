@@ -5,7 +5,6 @@ import 'package:pelengator/common_widgets/textindicator.dart';
 import 'package:pelengator/commons/consts.dart';
 import 'package:pelengator/top_level_blocs/locator_bloc.dart';
 import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
-import 'package:pelengator/utils.dart';
 
 class CoordScreen extends StatefulWidget {
   CoordScreen();
@@ -101,9 +100,20 @@ class CoordScreenState extends State<CoordScreen> {
               child: StyledButton(
                 'Go!',
                 () {
-                  goToFinderScreen(state.distance);
+                  if (state is DestinationCoordsSet && state.distance > 0) {
+                    goToFinderScreen(state.distance);
+                  } else {
+                    Scaffold.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            'First check if your input correct by pressing button "Find"!'),
+                      ),
+                    );
+                  }
                 },
-                color: state.distance < 0 ? Colors.grey : Color(BLUE_COLOR_HEX),
+                color: state is StartListenUserPosition
+                    ? Colors.grey
+                    : Color(BLUE_COLOR_HEX),
                 textColor: Colors.white,
               ),
             ),
@@ -117,8 +127,7 @@ class CoordScreenState extends State<CoordScreen> {
             ),
             Spacer(),
             Container(
-              child: TextIndicator(
-                  'Distance: ${getDistanceString(state.distance / 1000)}'),
+              child: TextIndicator('Distance: ${getDistanceString(state)}'),
             ),
           ],
         ),
@@ -126,18 +135,29 @@ class CoordScreenState extends State<CoordScreen> {
     );
   }
 
-  void goToFinderScreen(double distance) {
-    if (distance == DISTANCE_INIT || distance == DISTANCE_ERROR) {
-      Scaffold.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'First check if your input correct by pressing button "Find"!'),
-        ),
-      );
+  String getDistanceString(state) {
+    double distance;
+
+    if (!(state is DestinationCoordsSet)) {
+      return "";
     } else {
-      BlocProvider.of<NavigationBloc>(context)
-          .add(NavigationEvent.toFinderScreenCoord);
+      distance = state.distance / 1000;
     }
+
+    if (distance == DISTANCE_INIT) {
+      return "";
+    }
+
+    if (distance == DISTANCE_ERROR) {
+      return "Calculation error! Looks like coordinates are incorrect";
+    }
+
+    return distance.toString() + " kms";
+  }
+
+  void goToFinderScreen(double distance) {
+    BlocProvider.of<NavigationBloc>(context)
+        .add(NavigationEvent.toFinderScreenCoord);
   }
 
   returnToStartScreen() {
