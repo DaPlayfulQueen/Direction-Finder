@@ -53,6 +53,9 @@ class FinderScreenState extends State<FinderScreen>
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
+    BlocProvider.of<LocatorBloc>(context).add(ScreenUpdated(widget.byAddress
+        ? NavigationState.finderAddress
+        : NavigationState.finderCoordinates));
     return BlocBuilder<LocatorBloc, LocatorState>(
       builder: (context, state) => StreamBuilder(
         stream: _locatorBloc.compassStream,
@@ -61,7 +64,7 @@ class FinderScreenState extends State<FinderScreen>
             changeBlinkDuration(compassChangeSnapshot.data.angle);
           }
           return StreamBuilder(
-            stream:  _locatorBloc.positionStream,
+            stream: _locatorBloc.positionStream,
             builder: (context, positionChangeSnapshot) {
               return Container(
                 color: positionChangeSnapshot.data == null
@@ -72,20 +75,22 @@ class FinderScreenState extends State<FinderScreen>
                     Align(
                       alignment: Alignment.topLeft,
                       child: compassChangeSnapshot.data != null &&
-                          compassChangeSnapshot.data.turnDirection == TurnDirection.left
+                              compassChangeSnapshot.data.turnDirection ==
+                                  TurnDirection.left
                           ? FadeTransition(
-                        opacity: _animationController,
-                        child: getLeftLabel(width, height),
-                      )
+                              opacity: _animationController,
+                              child: getLeftLabel(width, height),
+                            )
                           : getLeftLabel(width, height),
                     ),
                     Align(
                       alignment: Alignment.topRight,
                       child: compassChangeSnapshot.data != null &&
-                          compassChangeSnapshot.data.turnDirection == TurnDirection.right
+                              compassChangeSnapshot.data.turnDirection ==
+                                  TurnDirection.right
                           ? FadeTransition(
-                          opacity: _animationController,
-                          child: getRightLabel(width, height))
+                              opacity: _animationController,
+                              child: getRightLabel(width, height))
                           : getRightLabel(width, height),
                     ),
                     Align(
@@ -111,12 +116,13 @@ class FinderScreenState extends State<FinderScreen>
                               margin: EdgeInsets.only(bottom: height * 0.02),
                               child: StyledButton(
                                 'Back',
-                                    () {
+                                () {
                                   _locatorBloc.add(StopListenUserPosition());
                                   BlocProvider.of<NavigationBloc>(context).add(
                                       widget.byAddress
                                           ? NavigationEvent.toAddressesScreen
-                                          : NavigationEvent.toCoordinatesScreen);
+                                          : NavigationEvent
+                                              .toCoordinatesScreen);
                                 },
                                 color: Colors.transparent,
                                 textColor: Color(BLUE_COLOR_HEX),
@@ -126,8 +132,9 @@ class FinderScreenState extends State<FinderScreen>
                               margin: EdgeInsets.only(bottom: height * 0.06),
                               child: StyledButton(
                                 'Drop',
-                                    () {
+                                () {
                                   _locatorBloc.add(StopListenUserPosition());
+                                  _locatorBloc.add(ExitScreen());
                                   BlocProvider.of<NavigationBloc>(context)
                                       .add(NavigationEvent.toStartScreen);
                                 },
@@ -170,7 +177,6 @@ class FinderScreenState extends State<FinderScreen>
       _blinkFrequency = 5;
     }
   }
-
 
   @override
   void dispose() {

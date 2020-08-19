@@ -8,18 +8,9 @@ const BLUE_COLOR_HEX = 0xFF3f4bb7;
 
 const API_KEY = "AIzaSyCr5nYLbc_koQFa6TobveKXQDxse3H1-bw";
 
+const SCREEN_KEY = 'current_screen';
+const LAT_KEY = 'destination_lat';
+const LONG_KEY = 'destination_long';
+const NAME_KEY = 'destination_name';
 
-const SCREEN_KEY = "SCREEN_KEY";
-const SCREEN_START = "SCREEN_START";
-const SCREEN_COORD = "SCREEN_COORD";
-const SCREEN_ADDRESS = "SCREEN_ADDRESS";
-const SCREEN_FINDER_ADD = "SCREEN_FINDER_ADD";
-const SCREEN_FINDER_COORD = "SCREEN_FINDER_COORD";
-
-const ADD_SCREEN_LAT = "ADD_SCREEN_LAT";
-const ADD_SCREEN_LONG = "ADD_SCREEN_LONG";
-const ADD_SCREEN_ADDRESS = "ADD_SCREEN_ADDRESS";
-const ADD_SCREEN_DISTANCE = "ADD_SCREEN_DISTANCE";
-
-const FINDER_SCREEN_LAT = "FINDER_SCREEN_LAT";
-const FINDER_SCREEN_LONG = "FINDER_SCREEN_LONG";
+const APP_STATE_KEY = "app_state";

@@ -1,15 +1,20 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
+import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geodesy/geodesy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:pelengator/commons/consts.dart';
+import 'package:pelengator/models/app_state.dart';
+import 'package:pelengator/top_level_blocs/navigation_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
   Position _userPosition;
-  Position _destinationPosition;
+  Position _destinationPosition =
+      Position(latitude: COORD_INIT, longitude: COORD_INIT);
   String _destinationName;
   double _lastKnownDistance = DISTANCE_INIT;
   double _lastKnownAngle = ANGLE_INIT;
@@ -24,23 +29,48 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
 
   final LocationAccuracy desiredAccuracy = LocationAccuracy.best;
 
+  NavigationState _navigationState;
+
   SharedPreferences _sharedPreferences;
 
-  LocatorBloc() : super(LocationTrackingDisabled()) {
-    SharedPreferences.getInstance().then((instance) {
-      _sharedPreferences = instance;
-      _sharedPreferences.setString(SCREEN_KEY, SCREEN_COORD);
-    });
-  }
+  LocatorBloc() : super(LocationTrackingDisabled());
 
   @override
   Stream<LocatorState> mapEventToState(LocatorEvent event) async* {
-    if (event is NewTargetCoords) {
-      setDestinationPosition(event.latitude, event.longitude);
+    if (event is ScreenUpdated) {
+      _navigationState = event.navigationState;
+      saveState();
+      yield NavigationStored();
+    }
+
+    if (event is RestoreState) {
+      restoreState();
+      yield AppStateRestored(_navigationState);
+    }
+
+    if (event is CalculateIfRestored) {
       _userPosition = await getUserPositionOnce();
       _lastKnownDistance =
           await getDistance(_userPosition, _destinationPosition);
-      yield DestinationCoordsSet(distance: _lastKnownDistance);
+      yield DistanceCalculated(
+          distance: _lastKnownDistance,
+          lat: _destinationPosition.latitude,
+          long: _destinationPosition.longitude,
+          name: _destinationName);
+    }
+
+    if (event is NewTargetCoords) {
+      setDestinationPosition(event.latitude, event.longitude);
+      _destinationName = event.name;
+      _userPosition = await getUserPositionOnce();
+      _lastKnownDistance =
+          await getDistance(_userPosition, _destinationPosition);
+      saveState();
+      yield DistanceCalculated(
+          distance: _lastKnownDistance,
+          lat: _destinationPosition.latitude,
+          long: _destinationPosition.longitude,
+          name: _destinationName);
     }
 
     if (event is StartListenUserPosition) {
@@ -54,6 +84,12 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
       resetStreams();
       yield UserPositionUpdated(
           _lastKnownDistance, _lastKnownAngle, _lastKnownTurnDirection);
+    }
+
+    if (event is ExitScreen) {
+      removeScreenPreference();
+      _navigationState = null;
+      yield LocationTrackingDisabled();
     }
   }
 
@@ -137,10 +173,59 @@ class LocatorBloc extends Bloc<LocatorEvent, LocatorState> {
     compassStream = null;
     positionStream = null;
     _userPosition = null;
-    _destinationPosition = null;
     _lastKnownDistance = DISTANCE_INIT;
     _lastKnownAngle = ANGLE_INIT;
     _lastKnownTurnDirection = null;
+  }
+
+  void saveState() {
+    var appState = AppState(
+        EnumToString.parse(_navigationState),
+        _destinationPosition.latitude,
+        _destinationPosition.longitude,
+        _destinationName);
+    var appStateJson = json.encode(appState);
+    _sharedPreferences.setString(APP_STATE_KEY, appStateJson);
+  }
+
+  void saveStateWithoutNavigation() {
+    var appState = AppState(
+        EnumToString.parse(null),
+        _destinationPosition.latitude,
+        _destinationPosition.longitude,
+        _destinationName);
+    var appStateJson = json.encode(appState);
+    _sharedPreferences.setString(APP_STATE_KEY, appStateJson);
+    print("The state saved $appStateJson");
+  }
+
+  Future<bool> getPreferences() async {
+    _sharedPreferences = await SharedPreferences.getInstance();
+    return true;
+  }
+
+  bool isCoordsRestored() {
+    return _destinationPosition.longitude != COORD_INIT;
+  }
+
+  void restoreState() {
+    print("RESTORING STATE");
+    var appStateString = _sharedPreferences.getString(APP_STATE_KEY);
+    if (appStateString == null) {
+      return;
+    }
+    var appStateJson = json.decode(appStateString);
+    var appState = AppState.fromJson(appStateJson);
+    _destinationName = appState.destinationName;
+    _destinationPosition = Position(
+        latitude: appState.destinationLat, longitude: appState.destinationLong);
+    _navigationState =
+        EnumToString.fromString(NavigationState.values, appState.currentScreen);
+  }
+
+  void removeScreenPreference() {
+    _sharedPreferences.remove(APP_STATE_KEY);
+    saveStateWithoutNavigation();
   }
 }
 
@@ -158,14 +243,29 @@ class StartListenUserPosition extends LocatorEvent {}
 
 class StopListenUserPosition extends LocatorEvent {}
 
+class ScreenUpdated extends LocatorEvent {
+  NavigationState navigationState;
+
+  ScreenUpdated(this.navigationState);
+}
+
+class RestoreState extends LocatorEvent {}
+
+class CalculateIfRestored extends LocatorEvent {}
+
+class ExitScreen extends LocatorEvent {}
+
 abstract class LocatorState {}
 
 class LocationTrackingDisabled extends LocatorState {}
 
-class DestinationCoordsSet extends LocatorState {
+class DistanceCalculated extends LocatorState {
   double distance;
+  double lat;
+  double long;
+  String name;
 
-  DestinationCoordsSet({this.distance = DISTANCE_INIT});
+  DistanceCalculated({this.distance, this.lat, this.long, this.name});
 }
 
 class UserPositionUpdated extends LocatorState {
@@ -174,6 +274,14 @@ class UserPositionUpdated extends LocatorState {
   TurnDirection turnDirection;
 
   UserPositionUpdated(this.distance, this.angle, this.turnDirection);
+}
+
+class NavigationStored extends LocatorState {}
+
+class AppStateRestored extends LocatorState {
+  NavigationState navigationState;
+
+  AppStateRestored(this.navigationState);
 }
 
 enum TurnDirection { left, right }
