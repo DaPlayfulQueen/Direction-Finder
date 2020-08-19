@@ -76,10 +76,10 @@ class AddressScreenState extends State<AddressScreen> {
                       var details = await _places.getDetailsByPlaceId(placeId);
                       _inputLat = details.result.geometry.location.lat;
                       _inputLong = details.result.geometry.location.lng;
-                      var placeName =
+                      var destinationName =
                           details.result.addressComponents[0].longName;
-                      _controller.text = placeName;
-                      _locatorBloc.add(NewTargetCoords(_inputLat, _inputLong));
+                      _controller.text = destinationName;
+                      _locatorBloc.add(NewTargetCoords(_inputLat, _inputLong, name: destinationName));
                     }, textColor: Colors.white),
                   ),
                   Container(

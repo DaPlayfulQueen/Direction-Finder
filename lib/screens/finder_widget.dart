@@ -56,88 +56,93 @@ class FinderScreenState extends State<FinderScreen>
     return BlocBuilder<LocatorBloc, LocatorState>(
       builder: (context, state) => StreamBuilder(
         stream: _locatorBloc.compassStream,
-        builder: (context, snapshot) {
-          if (snapshot.data != null) {
-            changeBlinkDuration(snapshot.data.angle);
+        builder: (context, compassChangeSnapshot) {
+          if (compassChangeSnapshot.data != null) {
+            changeBlinkDuration(compassChangeSnapshot.data.angle);
           }
-          return Container(
-            color: snapshot.data == null
-                ? Colors.white
-                : getBackgroundColor(snapshot.data.distance),
-            child: Stack(
-              children: <Widget>[
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: snapshot.data != null &&
-                          snapshot.data.turnDirection == TurnDirection.left
-                      ? FadeTransition(
-                          opacity: _animationController,
-                          child: getLeftLabel(width, height),
-                        )
-                      : getLeftLabel(width, height),
-                ),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: snapshot.data != null &&
-                          snapshot.data.turnDirection == TurnDirection.right
-                      ? FadeTransition(
+          return StreamBuilder(
+            stream:  _locatorBloc.positionStream,
+            builder: (context, positionChangeSnapshot) {
+              return Container(
+                color: positionChangeSnapshot.data == null
+                    ? Colors.white
+                    : getBackgroundColor(positionChangeSnapshot.data.distance),
+                child: Stack(
+                  children: <Widget>[
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: compassChangeSnapshot.data != null &&
+                          compassChangeSnapshot.data.turnDirection == TurnDirection.left
+                          ? FadeTransition(
+                        opacity: _animationController,
+                        child: getLeftLabel(width, height),
+                      )
+                          : getLeftLabel(width, height),
+                    ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: compassChangeSnapshot.data != null &&
+                          compassChangeSnapshot.data.turnDirection == TurnDirection.right
+                          ? FadeTransition(
                           opacity: _animationController,
                           child: getRightLabel(width, height))
-                      : getRightLabel(width, height),
-                ),
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    padding: EdgeInsets.all(50.0),
-                    child: TextIndicator(
-                      snapshot.data == null
-                          ? 'Distance:'
-                          : 'Distance: ${snapshot.data.distance}',
-                      width: width * 0.5,
+                          : getRightLabel(width, height),
                     ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: width * 0.05),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Container(
-                          margin: EdgeInsets.only(bottom: height * 0.02),
-                          child: StyledButton(
-                            'Back',
-                            () {
-                              _locatorBloc.add(StopListenUserPosition());
-                              BlocProvider.of<NavigationBloc>(context).add(
-                                  widget.byAddress
-                                      ? NavigationEvent.toAddressesScreen
-                                      : NavigationEvent.toCoordinatesScreen);
-                            },
-                            color: Colors.transparent,
-                            textColor: Color(BLUE_COLOR_HEX),
-                          ),
+                    Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        padding: EdgeInsets.all(50.0),
+                        child: TextIndicator(
+                          positionChangeSnapshot.data == null
+                              ? 'Distance:'
+                              : 'Distance: ${positionChangeSnapshot.data.distance}',
+                          width: width * 0.5,
                         ),
-                        Container(
-                          margin: EdgeInsets.only(bottom: height * 0.06),
-                          child: StyledButton(
-                            'Drop',
-                            () {
-                              _locatorBloc.add(StopListenUserPosition());
-                              BlocProvider.of<NavigationBloc>(context)
-                                  .add(NavigationEvent.toStartScreen);
-                            },
-                            color: Colors.transparent,
-                            textColor: Color(BLUE_COLOR_HEX),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: width * 0.05),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Container(
+                              margin: EdgeInsets.only(bottom: height * 0.02),
+                              child: StyledButton(
+                                'Back',
+                                    () {
+                                  _locatorBloc.add(StopListenUserPosition());
+                                  BlocProvider.of<NavigationBloc>(context).add(
+                                      widget.byAddress
+                                          ? NavigationEvent.toAddressesScreen
+                                          : NavigationEvent.toCoordinatesScreen);
+                                },
+                                color: Colors.transparent,
+                                textColor: Color(BLUE_COLOR_HEX),
+                              ),
+                            ),
+                            Container(
+                              margin: EdgeInsets.only(bottom: height * 0.06),
+                              child: StyledButton(
+                                'Drop',
+                                    () {
+                                  _locatorBloc.add(StopListenUserPosition());
+                                  BlocProvider.of<NavigationBloc>(context)
+                                      .add(NavigationEvent.toStartScreen);
+                                },
+                                color: Colors.transparent,
+                                textColor: Color(BLUE_COLOR_HEX),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

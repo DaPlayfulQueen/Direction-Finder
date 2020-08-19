@@ -140,10 +140,7 @@ class CoordScreenState extends State<CoordScreen> {
 
     if (!(state is DestinationCoordsSet)) {
       return "";
-    } else {
-      distance = state.distance / 1000;
     }
-
     if (distance == DISTANCE_INIT) {
       return "";
     }
@@ -152,6 +149,7 @@ class CoordScreenState extends State<CoordScreen> {
       return "Calculation error! Looks like coordinates are incorrect";
     }
 
+    distance = state.distance / 1000;
     return distance.toString() + " kms";
   }
 
